@@ -112,6 +112,9 @@ private:
 
     bool HandlePing(WorldPacket& recvPacket);
 
+    //Custom: HelloKitty: Need a way to accept connections for GladMMO
+    void HandleAuthSessionGladMMOClient(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result);
+
     std::array<uint8, 4> _authSeed;
     AuthCrypt _authCrypt;
 
