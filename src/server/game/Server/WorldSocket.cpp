@@ -427,6 +427,39 @@ void WorldSocket::SendPacket(WorldPacket const& packet)
     _bufferQueue.Enqueue(new EncryptablePacket(packet, _authCrypt.IsInitialized()));
 }
 
+void WorldSocket::HandleAuthSessionGladMMOClient(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result)
+{
+    // For hook purposes, we get Remoteaddress at this point.
+    std::string address = GetRemoteIpAddress().to_string();
+
+    // As we don't know if attempted login process by ip works, we update last_attempt_ip right away
+    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_LAST_ATTEMPT_IP);
+    stmt->setString(0, address);
+    stmt->setString(1, authSession->Account);
+    LoginDatabase.Execute(stmt);
+
+    // First reject the connection if packet contains invalid data or realm state doesn't allow logging in
+    if (sWorld->IsClosed())
+    {
+        SendAuthResponseError(AUTH_REJECT);
+        TC_LOG_ERROR("network", "WorldSocket::HandleAuthSession: World closed, denying client (%s).", GetRemoteIpAddress().to_string().c_str());
+        DelayedCloseSocket();
+        return;
+    }
+
+    TC_LOG_DEBUG("network", "WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.", authSession->Account.c_str(), address.c_str());
+
+    // At this point, we can safely hook a successful login
+    sScriptMgr->OnAccountLogin(authSession->RealmID); //HelloKitty TODO: We're abusing RealmID as the accountId for login. In the future we need to properly parse the JWT sent.
+
+    _authed = true;
+    _worldSession = new WorldSession(authSession->RealmID, std::move(authSession->Account), shared_from_this(), AccountTypes::SEC_PLAYER,
+        2, 0, LocaleConstant::LOCALE_enUS, 0, false);
+
+    LoadSessionPermissionsCallback(nullptr); //HelloKitty: null just means don't load custom permissions, use default for the player.
+    AsyncRead();
+}
+
 void WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 {
     std::shared_ptr<AuthSession> authSession = std::make_shared<AuthSession>();
@@ -449,7 +482,12 @@ void WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     stmt->setInt32(0, int32(realm.Id.Realm));
     stmt->setString(1, authSession->Account);
 
-    _queryProcessor.AddQuery(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSocket::HandleAuthSessionCallback, this, authSession, std::placeholders::_1)));
+    //HelloKitty: We differentiate between regular WOTLK clients and GladMMO clients here by build number. Wotlk_3_2_2a = 10505
+    //It MEANS the authentication attempt of a Swarm client.
+    if (authSession->Build == 10505)
+        HandleAuthSessionGladMMOClient(authSession, nullptr);
+    else
+        _queryProcessor.AddQuery(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSocket::HandleAuthSessionCallback, this, authSession, std::placeholders::_1)));
 }
 
 void WorldSocket::HandleAuthSessionCallback(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result)
