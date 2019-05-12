@@ -445,6 +445,7 @@ void WorldSocket::HandleAuthSessionGladMMOClient(std::shared_ptr<AuthSession> au
     _worldSession = new WorldSession(authSession->RealmID, std::move(authSession->Account), shared_from_this(), AccountTypes::SEC_PLAYER,
         2, 0, LocaleConstant::LOCALE_enUS, 0, false);
 
+    _worldSession->InitializeDefaultRBACData(); //HelloKitty: If we don't do this then we actually crash.
     LoadSessionPermissionsCallback(nullptr); //HelloKitty: null just means don't load custom permissions, use default for the player.
     AsyncRead();
 }

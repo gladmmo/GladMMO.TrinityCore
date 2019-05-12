@@ -432,6 +432,7 @@ class TC_GAME_API WorldSession
         void LoadPermissions();
         QueryCallback LoadPermissionsAsync();
         void InvalidateRBACData(); // Used to force LoadPermissions at next HasPermission check
+        void InitializeDefaultRBACData();
 
         AccountTypes GetSecurity() const { return _security; }
         uint32 GetAccountId() const { return _accountId; }

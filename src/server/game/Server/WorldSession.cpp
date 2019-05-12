@@ -1225,12 +1225,17 @@ void WorldSession::InitWarden(SessionKey const& k, std::string const& os)
     }
 }
 
-void WorldSession::LoadPermissions()
+void WorldSession::InitializeDefaultRBACData()
 {
     uint32 id = GetAccountId();
     uint8 secLevel = GetSecurity();
 
     _RBACData = new rbac::RBACData(id, _accountName, realm.Id.Realm, secLevel);
+}
+
+void WorldSession::LoadPermissions()
+{
+    InitializeDefaultRBACData();
     _RBACData->LoadFromDB();
 }
 
