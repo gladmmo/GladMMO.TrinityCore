@@ -425,7 +425,7 @@ void WorldSocket::HandleAuthSessionGladMMOClient(std::shared_ptr<AuthSession> au
     std::string address = GetRemoteIpAddress().to_string();
 
     // As we don't know if attempted login process by ip works, we update last_attempt_ip right away
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_LAST_ATTEMPT_IP);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_LAST_ATTEMPT_IP);
     stmt->setString(0, address);
     stmt->setString(1, authSession->Account);
     LoginDatabase.Execute(stmt);
