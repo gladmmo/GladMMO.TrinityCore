@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -150,16 +150,16 @@ struct boss_auriaya : public BossAI
         me->GetCreatureListWithEntryInGrid(catList, NPC_SANCTUM_SENTRY, 500.0f);
         for (std::list<Creature*>::const_iterator itr = catList.begin(); itr != catList.end(); ++itr)
         {
-            if (isResetting)
-                (*itr)->Respawn();
-            else
+            if (!isResetting)
                 (*itr)->DespawnOrUnsummon();
+            else if (!(*itr)->IsAlive())
+                (*itr)->Respawn(true);
         }
     }
 
-    void JustEngagedWith(Unit* /*who*/) override
+    void JustEngagedWith(Unit* who) override
     {
-        _JustEngagedWith();
+        BossAI::JustEngagedWith(who);
         Talk(SAY_AGGRO);
         instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
         events.ScheduleEvent(EVENT_SONIC_SCREECH, 48s);
@@ -211,11 +211,10 @@ struct boss_auriaya : public BossAI
         HandleCats(false);
     }
 
-    void EnterEvadeMode(EvadeReason /*why*/) override
+    void EnterEvadeMode(EvadeReason why) override
     {
         instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
-        summons.DespawnAll();
-        _DespawnAtEvade(Seconds(5));
+        BossAI::EnterEvadeMode(why);
     }
 
     void UpdateAI(uint32 diff) override

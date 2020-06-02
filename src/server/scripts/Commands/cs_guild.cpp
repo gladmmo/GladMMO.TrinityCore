@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -165,7 +165,7 @@ public:
             return false;
 
         // player's guild membership checked in AddMember before add
-        SQLTransaction trans(nullptr);
+        CharacterDatabaseTransaction trans(nullptr);
         return targetGuild->AddMember(trans, targetGuid);
     }
 
@@ -184,7 +184,7 @@ public:
         if (!targetGuild)
             return false;
 
-        SQLTransaction trans(nullptr);
+        CharacterDatabaseTransaction trans(nullptr);
         targetGuild->DeleteMember(trans, targetGuid, false, true, true);
         return true;
     }
@@ -212,7 +212,7 @@ public:
             return false;
 
         uint8 newRank = uint8(atoi(rankStr));
-        SQLTransaction trans(nullptr);
+        CharacterDatabaseTransaction trans(nullptr);
         return targetGuild->ChangeMemberRank(trans, targetGuid, newRank);
     }
 

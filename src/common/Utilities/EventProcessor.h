@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,11 +18,12 @@
 #ifndef __EVENTPROCESSOR_H
 #define __EVENTPROCESSOR_H
 
+#include "advstd.h"
 #include "Define.h"
 #include "Duration.h"
 #include "Random.h"
-#include "advstd.h"
 #include <map>
+#include <type_traits>
 
 class EventProcessor;
 
@@ -89,7 +89,7 @@ private:
 };
 
 template<typename T>
-using is_lambda_event = std::enable_if_t<!advstd::is_base_of_v<BasicEvent, std::remove_pointer_t<advstd::remove_cvref_t<T>>>>;
+using is_lambda_event = std::enable_if_t<!std::is_base_of_v<BasicEvent, std::remove_pointer_t<advstd::remove_cvref_t<T>>>>;
 
 class TC_COMMON_API EventProcessor
 {

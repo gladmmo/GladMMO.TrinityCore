@@ -11,6 +11,7 @@
 #    PERFORMANCE SETTINGS
 #    SERVER LOGGING
 #    SERVER SETTINGS
+#    CRYPTOGRAPHY
 #    UPDATE SETTINGS
 #    HOTSWAP SETTINGS
 #    WARDEN SETTINGS
@@ -87,7 +88,7 @@ LogsDir = ""
 #    WorldDatabaseInfo
 #    CharacterDatabaseInfo
 #        Description: Database connection settings for the world server.
-#        Example:     "hostname;port;username;password;database"
+#        Example:     "hostname;port;username;password;database;ssl"
 #                     ".;some_number;username;password;database" - (Use named pipes on Windows
 #                                                                 "enable-named-pipe" to [mysqld]
 #                                                                 section my.ini)
@@ -102,6 +103,8 @@ LogsDir = ""
 #    search for TCE00016 on forum.
 #    Don't open port on firewall to external connections (it belongs to MySQL, not to wow server).
 #    The username you choose must have permissions to create/alter/rename tables.
+#    The SSL option will enable TLS when connecting to the specified database. If not provided or
+#    any value other than 'ssl' is set, TLS will not be used.
 
 LoginDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;auth"
 WorldDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;world"
@@ -260,14 +263,6 @@ Compression = 1
 #                     1+  - (Enabled)
 
 PlayerLimit = 0
-
-#
-#    SaveRespawnTimeImmediately
-#        Description: Save respawn time for creatures at death and gameobjects at use/open.
-#        Default:     1 - (Enabled, Save respawn time immediately)
-#                     0 - (Disabled, Save respawn time at grid unloading)
-
-SaveRespawnTimeImmediately = 1
 
 #
 #    MaxOverspeedPings
@@ -455,10 +450,10 @@ LogDB.Opt.ClearTime = 1209600
 #
 #    MaxCoreStuckTime
 #        Description: Time (in seconds) before the server is forced to crash if it is frozen.
-#        Default:     0   - (Disabled)
-#                     10+ - (Enabled, Recommended 10+)
+#        Default:     60 - (Enabled, Recommended 10+)
+#                      0 - (Disabled)
 
-MaxCoreStuckTime = 0
+MaxCoreStuckTime = 60
 
 #
 #    AddonChannel
@@ -1044,6 +1039,23 @@ Quests.IgnoreAutoComplete = 0
 Quests.DailyResetTime = 3
 
 #
+#    Quests.WeeklyResetWDay
+#        Description: Day of the week when weekly quest reset occurs.
+#        Range:       0 (Sunday) to 6 (Saturday)
+#        Default:     3 - (Wednesday)
+#
+
+Quests.WeeklyResetWDay = 3
+
+#
+#    Calendar.DeleteOldEventsHour
+#        Description: Hour of the day when the daily deletion of old calendar events occurs.
+#        Range:       0-23
+#        Default:     6 - (06:00 AM)
+
+Calendar.DeleteOldEventsHour = 6
+
+#
 #    Guild.EventLogRecordsCount
 #        Description: Number of log entries for guild events that are stored per guild. Old entries
 #                     will be overwritten if the number of log entries exceed the configured value.
@@ -1113,7 +1125,7 @@ MinQuestScaledXPRatio = 0
 
 #
 #    MinCreatureScaledXPRatio
-#        Description: Min ratio of experience that a creature kill can grant when player level scaling is factored.  This 
+#        Description: Min ratio of experience that a creature kill can grant when player level scaling is factored.  This
 #                     will also allow spell procs to trigger, such as Drain Soul, if > 0 and exp is grantable.
 #        Example:     50 (No less than 50% experience granted from a lower leveled creature kill)
 #                     100 (Creature kills always grant full experience upon kill)
@@ -1282,7 +1294,7 @@ BirthdayTime = 1222964635
 
 #
 #   CacheDataQueries
-#        Description: Server caches data queries at startup. 
+#        Description: Server caches data queries at startup.
 #                     Can be disabled if not enough memory is available.
 #        Default:     1 - (Enabled)
 #                     0 - (Disabled)
@@ -1290,6 +1302,25 @@ BirthdayTime = 1222964635
 #
 
 CacheDataQueries = 1
+
+#
+###################################################################################################
+
+###################################################################################################
+# CRYPTOGRAPHY
+#
+#    TOTPMasterSecret
+#        Description: The key used by authserver to decrypt TOTP secrets from database storage.
+#                     You only need to set this here if you plan to use the in-game 2FA
+#                     management commands (.account 2fa), otherwise this can be left blank.
+#
+#                     The server will auto-detect if this does not match your authserver setting,
+#                     in which case any commands reliant on the secret will be disabled.
+#
+#        Default:     <blank>
+#
+
+TOTPMasterSecret =
 
 #
 ###################################################################################################
@@ -1628,13 +1659,13 @@ WorldBossLevelDiff = 3
 #    Corpse.Decay.RAREELITE
 #    Corpse.Decay.WORLDBOSS
 #        Description: Time (in seconds) until creature corpse will decay if not looted or skinned.
-#        Default:     60   - (1 Minute, Corpse.Decay.NORMAL)
+#        Default:     300  - (5 Minutes, Corpse.Decay.NORMAL)
 #                     300  - (5 Minutes, Corpse.Decay.RARE)
 #                     300  - (5 Minutes, Corpse.Decay.ELITE)
 #                     300  - (5 Minutes, Corpse.Decay.RAREELITE)
 #                     3600 - (1 Hour, Corpse.Decay.WORLDBOSS)
 
-Corpse.Decay.NORMAL    = 60
+Corpse.Decay.NORMAL    = 300
 Corpse.Decay.RARE      = 300
 Corpse.Decay.ELITE     = 300
 Corpse.Decay.RAREELITE = 300
@@ -1752,6 +1783,14 @@ Creature.MovingStopTimeForPlayer = 180000
 #        Default:     50.000000
 
 MonsterSight = 50.000000
+
+#
+#    Creature.RegenHPCannotReachTargetInRaid
+#        Description: Regenerates HP for Creatures in Raids if they cannot reach the target.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+Creature.RegenHPCannotReachTargetInRaid = 1
 
 #
 ###################################################################################################
@@ -1968,6 +2007,13 @@ PartyLevelReq = 1
 #                     1 - (Enabled)
 
 PreserveCustomChannels = 1
+
+#
+#    PreserveCustomChannelInterval
+#        Description: Interval (in minutes) at which custom channel data is saved to the database
+#        Default:     5 minutes
+
+PreserveCustomChannelInterval = 5
 
 #
 #    PreserveCustomChannelDuration
@@ -2415,6 +2461,7 @@ DurabilityLoss.InPvP = 0
 #
 #    DurabilityLoss.OnDeath
 #        Description: Durability loss percentage on death.
+#        Note:        On 3.3.5 client always shows log message "Your items have lost 10% durability"
 #        Default:     10
 
 DurabilityLoss.OnDeath = 10
@@ -2742,6 +2789,14 @@ Arena.MaxRatingDifference = 150
 #                     0      - (Disabled)
 
 Arena.RatingDiscardTimer = 600000
+
+#
+#    Arena.PreviousOpponentsDiscardTimer
+#        Description: Time (in milliseconds) after which the previous opponents will be ignored.
+#        Default:     120000 - (Enabled, 2 minutes - Blizzlike)
+#                     0      - (Disabled)
+
+Arena.PreviousOpponentsDiscardTimer = 120000
 
 #
 #    Arena.RatedUpdateTimer
@@ -3196,7 +3251,7 @@ PlayerStart.String = ""
 
 #
 #     LevelReq.Trade
-#        Description: Level requirement for characters to be able to trade.
+#        Description: Level requirement for characters to be able to initiate a trade.
 #        Default:     1
 
 LevelReq.Trade = 1
@@ -3914,6 +3969,7 @@ Logger.mmaps=3,Server
 #Logger.movement.motionmaster=3,Console Server
 #Logger.movement.splinechain=3,Console Server
 #Logger.network=3,Console Server
+#Logger.network.kick=3,Console Server
 #Logger.network.opcode=3,Console Server
 #Logger.network.soap=3,Console Server
 #Logger.outdoorpvp=3,Console Server
@@ -3921,10 +3977,17 @@ Logger.mmaps=3,Server
 #Logger.rbac=3,Console Server
 #Logger.scripts=3,Console Server
 #Logger.scripts.ai=3,Console Server
+#Logger.scripts.ai.escortai=3,Console Server
+#Logger.scripts.ai.followerai=3,Console Server
+#Logger.scripts.ai.petai=3,Console Server
 #Logger.scripts.ai.sai=3,Console Server
+#Logger.scripts.cos=3,Console Server
 #Logger.server.authserver=3,Console Server
 #Logger.spells=3,Console Server
 #Logger.spells.aura.effect=3,Console Server
+#Logger.spells.aura.effect.nospell=3,Console Server
+#Logger.spells.effect=3,Console Server
+#Logger.spells.effect.nospell=3,Console Server
 #Logger.sql.dev=3,Console Server
 #Logger.sql.driver=3,Console Server
 #Logger.warden=3,Console Server

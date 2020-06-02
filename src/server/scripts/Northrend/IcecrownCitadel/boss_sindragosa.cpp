@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -302,6 +302,8 @@ class boss_sindragosa : public CreatureScript
                 instance->SetBossState(DATA_SINDRAGOSA, FAIL);
                 me->SetCanFly(false);
                 me->SetDisableGravity(false);
+                me->RemoveByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_ANIM_TIER, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+                me->SetReactState(REACT_DEFENSIVE);
             }
 
             void KilledUnit(Unit* victim) override
@@ -1174,7 +1176,7 @@ class spell_sindragosa_unchained_magic : public SpellScript
                 continue;
             }
 
-            switch (player->getClass())
+            switch (player->GetClass())
             {
                 case CLASS_PRIEST:
                 case CLASS_MAGE:

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -56,8 +56,8 @@ class StoredLootContainer
 
         explicit StoredLootContainer(uint32 containerId) : _containerId(containerId), _money(0) { }
 
-        void AddLootItem(LootItem const& lootItem, SQLTransaction& trans);
-        void AddMoney(uint32 money, SQLTransaction& trans);
+        void AddLootItem(LootItem const& lootItem, CharacterDatabaseTransaction& trans);
+        void AddMoney(uint32 money, CharacterDatabaseTransaction& trans);
 
         void RemoveMoney();
         void RemoveItem(uint32 itemId, uint32 count);

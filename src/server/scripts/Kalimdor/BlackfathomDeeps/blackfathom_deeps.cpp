@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -101,10 +101,7 @@ public:
         {
             Initialize();
             if (creature->IsSummon())
-            {
                 creature->SetHomePosition(HomePosition);
-                AttackPlayer();
-            }
 
             instance = creature->GetInstanceScript();
         }
@@ -129,6 +126,7 @@ public:
         void Reset() override
         {
             Initialize();
+            AttackPlayer();
         }
 
         void AttackPlayer()
@@ -225,7 +223,9 @@ public:
 
     struct npc_morriduneAI : public EscortAI
     {
-        npc_morriduneAI(Creature* creature) : EscortAI(creature)
+        npc_morriduneAI(Creature* creature) : EscortAI(creature) { }
+
+        void Reset() override
         {
             Talk(SAY_MORRIDUNE_1);
             me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -30,6 +30,8 @@ uint32 const DragonspireMobs[3] = { NPC_BLACKHAND_DREADWEAVER, NPC_BLACKHAND_SUM
 
 DoorData const doorData[] =
 {
+    { GO_DOORS,                 DATA_PYROGAURD_EMBERSEER,   DOOR_TYPE_ROOM },
+    { GO_EMBERSEER_OUT,         DATA_PYROGAURD_EMBERSEER,   DOOR_TYPE_PASSAGE },
     { GO_DRAKKISATH_DOOR_1,     DATA_GENERAL_DRAKKISATH,    DOOR_TYPE_PASSAGE },
     { GO_DRAKKISATH_DOOR_2,     DATA_GENERAL_DRAKKISATH,    DOOR_TYPE_PASSAGE },
     { 0,                        0,                          DOOR_TYPE_ROOM }
@@ -121,6 +123,9 @@ public:
                     break;
                 case NPC_FINKLE_EINHORN:
                     creature->AI()->Talk(SAY_FINKLE_GANG);
+                    break;
+                case NPC_BLACKHAND_INCARCERATOR:
+                    _incarceratorList.push_back(creature->GetGUID());
                     break;
              }
          }
@@ -297,6 +302,10 @@ public:
                             Events.ScheduleEvent(EVENT_DARGONSPIRE_ROOM_STORE, 1s);
                     }
                     break;
+                case DATA_BLACKHAND_INCARCERATOR:
+                    for (GuidList::const_iterator itr = _incarceratorList.begin(); itr != _incarceratorList.end(); ++itr)
+                        if (Creature* creature = instance->GetCreature(*itr))
+                            creature->Respawn();
                 default:
                     break;
             }
@@ -524,6 +533,7 @@ public:
             ObjectGuid runecreaturelist[7][5];
             ObjectGuid go_portcullis_active;
             ObjectGuid go_portcullis_tobossrooms;
+            GuidList _incarceratorList;
     };
 
     InstanceScript* GetInstanceScript(InstanceMap* map) const override
@@ -597,7 +607,7 @@ public:
             {
                 if (Creature* infiltrator = ObjectAccessor::GetCreature(*player, instance->GetGuidData(DATA_SCARSHIELD_INFILTRATOR)))
                 {
-                    if (player->getLevel() >= 57)
+                    if (player->GetLevel() >= 57)
                         infiltrator->AI()->SetData(1, 1);
                     else if (infiltrator->GetEntry() == NPC_SCARSHIELD_INFILTRATOR)
                         infiltrator->AI()->Talk(0, player);

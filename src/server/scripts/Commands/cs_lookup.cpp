@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -44,6 +44,18 @@ public:
 
     std::vector<ChatCommand> GetCommands() const override
     {
+        static std::vector<ChatCommand> lookupItemCommandTable =
+        {
+            { "id", rbac::RBAC_PERM_COMMAND_LOOKUP_ITEM_ID,  true, &HandleLookupItemIdCommand,          "" },
+            { "",   rbac::RBAC_PERM_COMMAND_LOOKUP_ITEM,     true, &HandleLookupItemCommand,            "" },
+        };
+
+        static std::vector<ChatCommand> lookupQuestCommandTable =
+        {
+            { "id", rbac::RBAC_PERM_COMMAND_LOOKUP_QUEST_ID, true, &HandleLookupQuestIdCommand,         "" },
+            { "",   rbac::RBAC_PERM_COMMAND_LOOKUP_QUEST,    true, &HandleLookupQuestCommand,           "" },
+        };
+
         static std::vector<ChatCommand> lookupPlayerCommandTable =
         {
             { "ip",      rbac::RBAC_PERM_COMMAND_LOOKUP_PLAYER_IP,      true, &HandleLookupPlayerIpCommand,        "" },
@@ -57,23 +69,29 @@ public:
             { "",   rbac::RBAC_PERM_COMMAND_LOOKUP_SPELL,    true, &HandleLookupSpellCommand,           "" },
         };
 
+        static std::vector<ChatCommand> lookupMapCommandTable =
+        {
+            { "id", rbac::RBAC_PERM_COMMAND_LOOKUP_MAP_ID, true, &HandleLookupMapIdCommand,           "" },
+            { "",   rbac::RBAC_PERM_COMMAND_LOOKUP_MAP,    true, &HandleLookupMapCommand,             "" },
+        };
+
         static std::vector<ChatCommand> lookupCommandTable =
         {
             { "area",     rbac::RBAC_PERM_COMMAND_LOOKUP_AREA,     true, &HandleLookupAreaCommand,     "" },
             { "creature", rbac::RBAC_PERM_COMMAND_LOOKUP_CREATURE, true, &HandleLookupCreatureCommand, "" },
             { "event",    rbac::RBAC_PERM_COMMAND_LOOKUP_EVENT,    true, &HandleLookupEventCommand,    "" },
             { "faction",  rbac::RBAC_PERM_COMMAND_LOOKUP_FACTION,  true, &HandleLookupFactionCommand,  "" },
-            { "item",     rbac::RBAC_PERM_COMMAND_LOOKUP_ITEM,     true, &HandleLookupItemCommand,     "" },
+            { "item",     rbac::RBAC_PERM_COMMAND_LOOKUP_ITEM,     true, nullptr,                      "", lookupItemCommandTable },
             { "itemset",  rbac::RBAC_PERM_COMMAND_LOOKUP_ITEMSET,  true, &HandleLookupItemSetCommand,  "" },
             { "object",   rbac::RBAC_PERM_COMMAND_LOOKUP_OBJECT,   true, &HandleLookupObjectCommand,   "" },
-            { "quest",    rbac::RBAC_PERM_COMMAND_LOOKUP_QUEST,    true, &HandleLookupQuestCommand,    "" },
-            { "player",   rbac::RBAC_PERM_COMMAND_LOOKUP_PLAYER,   true, nullptr,                         "", lookupPlayerCommandTable },
+            { "quest",    rbac::RBAC_PERM_COMMAND_LOOKUP_QUEST,    true, nullptr,                      "", lookupQuestCommandTable },
+            { "player",   rbac::RBAC_PERM_COMMAND_LOOKUP_PLAYER,   true, nullptr,                      "", lookupPlayerCommandTable },
             { "skill",    rbac::RBAC_PERM_COMMAND_LOOKUP_SKILL,    true, &HandleLookupSkillCommand,    "" },
-            { "spell",    rbac::RBAC_PERM_COMMAND_LOOKUP_SPELL,    true, nullptr,                         "", lookupSpellCommandTable },
+            { "spell",    rbac::RBAC_PERM_COMMAND_LOOKUP_SPELL,    true, nullptr,                      "", lookupSpellCommandTable },
             { "taxinode", rbac::RBAC_PERM_COMMAND_LOOKUP_TAXINODE, true, &HandleLookupTaxiNodeCommand, "" },
             { "tele",     rbac::RBAC_PERM_COMMAND_LOOKUP_TELE,     true, &HandleLookupTeleCommand,     "" },
             { "title",    rbac::RBAC_PERM_COMMAND_LOOKUP_TITLE,    true, &HandleLookupTitleCommand,    "" },
-            { "map",      rbac::RBAC_PERM_COMMAND_LOOKUP_MAP,      true, &HandleLookupMapCommand,      "" },
+            { "map",      rbac::RBAC_PERM_COMMAND_LOOKUP_MAP,      true, nullptr,                      "", lookupMapCommandTable },
         };
 
         static std::vector<ChatCommand> commandTable =
@@ -471,6 +489,34 @@ public:
         return true;
     }
 
+    static bool HandleLookupItemIdCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        uint32 id = atoi((char*)args);
+
+        if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(id))
+        {
+            std::string name = itemTemplate->Name1;
+
+            if (name.empty())
+            {
+                handler->SendSysMessage(LANG_COMMAND_NOITEMFOUND);
+                return true;
+            }
+
+            if (handler->GetSession())
+                handler->PSendSysMessage(LANG_ITEM_LIST_CHAT, id, id, name.c_str());
+            else
+                handler->PSendSysMessage(LANG_ITEM_LIST_CONSOLE, id, name.c_str());
+        }
+        else
+            handler->SendSysMessage(LANG_COMMAND_NOITEMFOUND);
+
+        return true;
+    }
+
     static bool HandleLookupItemSetCommand(ChatHandler* handler, char const* args)
     {
         if (!*args)
@@ -733,6 +779,56 @@ public:
         }
 
         if (!found)
+            handler->SendSysMessage(LANG_COMMAND_NOQUESTFOUND);
+
+        return true;
+    }
+
+    static bool HandleLookupQuestIdCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        uint32 id = atoi((char*)args);
+
+        // can be NULL at console call
+        Player* target = handler->getSelectedPlayerOrSelf();
+
+        if (Quest const* quest = sObjectMgr->GetQuestTemplate(id))
+        {
+            std::string title = quest->GetTitle();
+            if (title.empty())
+            {
+                handler->SendSysMessage(LANG_COMMAND_NOQUESTFOUND);
+                return true;
+            }
+
+            char const* statusStr = "";
+
+            if (target)
+            {
+                switch (target->GetQuestStatus(id))
+                {
+                    case QUEST_STATUS_COMPLETE:
+                        statusStr = handler->GetTrinityString(LANG_COMMAND_QUEST_COMPLETE);
+                        break;
+                    case QUEST_STATUS_INCOMPLETE:
+                        statusStr = handler->GetTrinityString(LANG_COMMAND_QUEST_ACTIVE);
+                        break;
+                    case QUEST_STATUS_REWARDED:
+                        statusStr = handler->GetTrinityString(LANG_COMMAND_QUEST_REWARDED);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (handler->GetSession())
+                handler->PSendSysMessage(LANG_QUEST_LIST_CHAT, id, id, quest->GetQuestLevel(), title.c_str(), statusStr);
+            else
+                handler->PSendSysMessage(LANG_QUEST_LIST_CONSOLE, id, title.c_str(), statusStr);
+        }
+        else
             handler->SendSysMessage(LANG_COMMAND_NOQUESTFOUND);
 
         return true;
@@ -1294,6 +1390,53 @@ public:
         return true;
     }
 
+    static bool HandleLookupMapIdCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        uint32 id = atoi((char*)args);
+
+        if (MapEntry const* mapInfo = sMapStore.LookupEntry(id))
+        {
+            uint8 locale = handler->GetSession() ? handler->GetSession()->GetSessionDbcLocale() : sWorld->GetDefaultDbcLocale();
+            std::string name = mapInfo->name[locale];
+            if (name.empty())
+            {
+                handler->SendSysMessage(LANG_COMMAND_NOSPELLFOUND);
+                return true;
+            }
+
+            std::ostringstream ss;
+            ss << id << " - [" << name << ']';
+
+            if (mapInfo->IsContinent())
+                ss << handler->GetTrinityString(LANG_CONTINENT);
+
+            switch (mapInfo->map_type)
+            {
+            case MAP_INSTANCE:
+                ss << handler->GetTrinityString(LANG_INSTANCE);
+                break;
+            case MAP_RAID:
+                ss << handler->GetTrinityString(LANG_RAID);
+                break;
+            case MAP_BATTLEGROUND:
+                ss << handler->GetTrinityString(LANG_BATTLEGROUND);
+                break;
+            case MAP_ARENA:
+                ss << handler->GetTrinityString(LANG_ARENA);
+                break;
+            }
+
+            handler->SendSysMessage(ss.str().c_str());
+        }
+        else
+            handler->SendSysMessage(LANG_COMMAND_NOMAPFOUND);
+
+        return true;
+    }
+
     static bool HandleLookupPlayerIpCommand(ChatHandler* handler, char const* args)
     {
         std::string ip;
@@ -1317,7 +1460,7 @@ public:
             limit = limitStr ? atoi(limitStr) : -1;
         }
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BY_IP);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BY_IP);
         stmt->setString(0, ip);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
 
@@ -1337,7 +1480,7 @@ public:
             (account))
             return false;
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_LIST_BY_NAME);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_LIST_BY_NAME);
         stmt->setString(0, account);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
 
@@ -1353,7 +1496,7 @@ public:
         char* limitStr = strtok(nullptr, " ");
         int32 limit = limitStr ? atoi(limitStr) : -1;
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_LIST_BY_EMAIL);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_LIST_BY_EMAIL);
         stmt->setString(0, email);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
 
@@ -1385,7 +1528,7 @@ public:
             uint32 accountId        = fields[0].GetUInt32();
             std::string accountName = fields[1].GetString();
 
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_GUID_NAME_BY_ACC);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_GUID_NAME_BY_ACC);
             stmt->setUInt32(0, accountId);
             PreparedQueryResult result2 = CharacterDatabase.Query(stmt);
 

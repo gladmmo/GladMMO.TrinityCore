@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2019 TrinityCore <https://www.trinitycore.org/>
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -486,7 +486,7 @@ struct npc_skadi_trashAI : public ScriptedAI
         ScheduleTasks();
     }
 
-    void IsSummonedBy(Unit* /*summoner*/) override
+    void IsSummonedBy(WorldObject* /*summoner*/) override
     {
         if (Creature* skadi = _instance->GetCreature(DATA_SKADI_THE_RUTHLESS))
             skadi->AI()->JustSummoned(me);
