@@ -416,8 +416,19 @@ void WorldSocket::SendPacket(WorldPacket const& packet)
     _bufferQueue.Enqueue(new EncryptablePacket(packet, _authCrypt.IsInitialized()));
 }
 
+//HelloKitty TODO: In the future we need to properly parse a JWT sent.
 void WorldSocket::HandleAuthSessionGladMMOClient(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result)
 {
+    // Stop if the account is not found
+    if (!result)
+    {
+        // We can not log here, as we do not know the account. Thus, no accountId.
+        SendAuthResponseError(AUTH_UNKNOWN_ACCOUNT);
+        TC_LOG_ERROR("network", "WorldSocket::HandleAuthSessionGladMMOClient: Sent Auth Response (unknown account).");
+        DelayedCloseSocket();
+        return;
+    }
+
     // For hook purposes, we get Remoteaddress at this point.
     std::string address = GetRemoteIpAddress().to_string();
 
@@ -438,11 +449,15 @@ void WorldSocket::HandleAuthSessionGladMMOClient(std::shared_ptr<AuthSession> au
 
     TC_LOG_DEBUG("network", "WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.", authSession->Account.c_str(), address.c_str());
 
+    //Based on LOGIN_SEL_ACCOUNT_INFO_BY_NAME. a.id is first.
+    int accountId = result->Fetch()[0].GetUInt32();
+    AccountTypes security = static_cast<AccountTypes>((result->Fetch()[10].GetUInt8()));
+
     // At this point, we can safely hook a successful login
-    sScriptMgr->OnAccountLogin(authSession->RealmID); //HelloKitty TODO: We're abusing RealmID as the accountId for login. In the future we need to properly parse the JWT sent.
+    sScriptMgr->OnAccountLogin(accountId);
 
     _authed = true;
-    _worldSession = new WorldSession(authSession->RealmID, std::move(authSession->Account), shared_from_this(), AccountTypes::SEC_PLAYER,
+    _worldSession = new WorldSession(accountId, std::move(authSession->Account), shared_from_this(), security,
         2, 0, LocaleConstant::LOCALE_enUS, 0, false);
 
     _worldSession->InitializeDefaultRBACData(); //HelloKitty: If we don't do this then we actually crash.
@@ -476,7 +491,7 @@ void WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     //HelloKitty: We differentiate between regular WOTLK clients and GladMMO clients here by build number. Wotlk_3_2_2a = 10505
     //It MEANS the authentication attempt of a Swarm client.
     if (authSession->Build == 10505)
-        HandleAuthSessionGladMMOClient(authSession, nullptr);
+        _queryProcessor.AddCallback(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSocket::HandleAuthSessionGladMMOClient, this, authSession, std::placeholders::_1)));
     else
         _queryProcessor.AddCallback(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSocket::HandleAuthSessionCallback, this, authSession, std::placeholders::_1)));
 }
