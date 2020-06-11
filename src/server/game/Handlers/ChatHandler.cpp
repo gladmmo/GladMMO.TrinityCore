@@ -115,6 +115,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         // LANG_ADDON is only valid for the following message types
         switch (type)
         {
+            case CHAT_MSG_SAY:
             case CHAT_MSG_PARTY:
             case CHAT_MSG_RAID:
             case CHAT_MSG_GUILD:
@@ -234,14 +235,15 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
     {
         if (msg.empty())
             return;
-        if (lang == LANG_ADDON)
-        {
-            if (AddonChannelCommandHandler(this).ParseCommands(msg.c_str()))
-                return;
-        }
-        else
+
+        if(msg.size() >= 1 && msg[0] == '.')
         {
             if (ChatHandler(this).ParseCommands(msg.c_str()))
+                return;
+        }
+        else if (lang == LANG_ADDON)
+        {
+            if (AddonChannelCommandHandler(this).ParseCommands(msg.c_str()))
                 return;
         }
     }
