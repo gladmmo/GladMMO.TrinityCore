@@ -76,6 +76,7 @@ namespace Movement
             data << move_spline.effect_start_time;
         }
 
+        // Surprisingly this is actually what controls the movement speed on the client.
         data << move_spline.Duration();
 
         if (splineflags.parabolic)
