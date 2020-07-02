@@ -947,15 +947,6 @@ ResponseCodes ValidateName(std::wstring const& name, LocaleConstant locale)
     if (locale >= TOTAL_LOCALES)
         return RESPONSE_FAILURE;
 
-    for (Trinity::wregex const& regex : NamesProfaneValidators[locale])
-        if (Trinity::regex_search(name, regex))
-            return CHAR_NAME_PROFANE;
-
-    // regexes at TOTAL_LOCALES are loaded from NamesReserved which is not locale specific
-    for (Trinity::wregex const& regex : NamesReservedValidators[locale])
-        if (Trinity::regex_search(name, regex))
-            return CHAR_NAME_RESERVED;
-
     return CHAR_NAME_SUCCESS;
 }
 

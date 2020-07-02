@@ -8590,11 +8590,6 @@ ResponseCodes ObjectMgr::CheckPlayerName(std::string const& name, LocaleConstant
     if (!isValidString(wname, strictMask, false, create))
         return CHAR_NAME_MIXED_LANGUAGES;
 
-    wstrToLower(wname);
-    for (size_t i = 2; i < wname.size(); ++i)
-        if (wname[i] == wname[i-1] && wname[i] == wname[i-2])
-            return CHAR_NAME_THREE_CONSECUTIVE;
-
     return ValidateName(wname, locale);
 }
 
