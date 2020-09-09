@@ -8598,10 +8598,6 @@ ResponseCodes ObjectMgr::CheckPlayerName(std::string_view name, LocaleConstant l
     if (wname.size() < minName)
         return CHAR_NAME_TOO_SHORT;
 
-    uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PLAYER_NAMES);
-    if (!isValidString(wname, strictMask, false, create))
-        return CHAR_NAME_MIXED_LANGUAGES;
-
     return ValidateName(wname, locale);
 }
 
