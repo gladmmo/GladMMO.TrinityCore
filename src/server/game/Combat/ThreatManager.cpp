@@ -32,6 +32,9 @@
 #include "WorldPacket.h"
 #include <algorithm>
 
+#include "Hacks/boost_1_74_fibonacci_heap.h"
+BOOST_1_74_FIBONACCI_HEAP_MSVC_COMPILE_FIX(ThreatManager::threat_list_heap::value_type)
+
 const CompareThreatLessThan ThreatManager::CompareThreat;
 
 void ThreatReference::AddThreat(float amount)
@@ -571,7 +574,7 @@ ThreatReference const* ThreatManager::ReselectVictim()
         ++it;
     }
     // we should have found the old victim at some point in the loop above, so execution should never get to this point
-    ASSERT(false, "Current victim not found in sorted threat list even though it has a reference - manager desync!");
+    ABORT_MSG("Current victim not found in sorted threat list even though it has a reference - manager desync!");
     return nullptr;
 }
 
