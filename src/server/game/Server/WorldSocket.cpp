@@ -483,17 +483,26 @@ void WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     authSession->AddonInfo.resize(recvPacket.size() - recvPacket.rpos());
     recvPacket.read(authSession->AddonInfo.contents(), authSession->AddonInfo.size()); // .contents will throw if empty, thats what we want
 
-    // Get the account information from the auth database
-    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO_BY_NAME);
-    stmt->setInt32(0, int32(realm.Id.Realm));
-    stmt->setString(1, authSession->Account);
-
     //HelloKitty: We differentiate between regular WOTLK clients and GladMMO clients here by build number. Wotlk_3_2_2a = 10505
     //It MEANS the authentication attempt of a Swarm client.
     if (authSession->Build == 10505)
+    {
+        //Simple won't check session data.
+        //LOGIN_SEL_ACCOUNT_INFO_BY_NAME_SIMPLE
+        // Get the account information from the auth database
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO_BY_NAME_SIMPLE);
+        stmt->setInt32(0, int32(realm.Id.Realm));
+        stmt->setString(1, authSession->Account);
         _queryProcessor.AddCallback(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSocket::HandleAuthSessionGladMMOClient, this, authSession, std::placeholders::_1)));
+    }
     else
+    {
+        // Get the account information from the auth database
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO_BY_NAME);
+        stmt->setInt32(0, int32(realm.Id.Realm));
+        stmt->setString(1, authSession->Account);
         _queryProcessor.AddCallback(LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSocket::HandleAuthSessionCallback, this, authSession, std::placeholders::_1)));
+    }
 }
 
 void WorldSocket::HandleAuthSessionCallback(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result)

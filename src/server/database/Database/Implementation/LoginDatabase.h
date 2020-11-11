@@ -117,6 +117,8 @@ enum LoginDatabaseStatements : uint32
     LOGIN_SEL_ACCOUNT_TOTP_SECRET,
     LOGIN_UPD_ACCOUNT_TOTP_SECRET,
 
+    LOGIN_SEL_ACCOUNT_INFO_BY_NAME_SIMPLE, //GladMMO simplified account selection
+
     MAX_LOGINDATABASE_STATEMENTS
 };
 
