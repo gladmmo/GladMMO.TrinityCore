@@ -1,0 +1,1 @@
+ALTER TABLE `characters` MODIFY COLUMN guid INT auto_increment
